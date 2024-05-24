@@ -1,30 +1,20 @@
 
-from flask import Blueprint, render_template,  jsonify, request
-from BDGTH.SumaMovDepto.src.database.db import ConexionSQL
-import pyodbc
+from BDGTH.caliz.src.models.entities.suma import Suma
+from BDGTH.caliz.src.database.db import conexion
 
 
-SumDepto = Blueprint("SumDepto", __name__, static_folder="static", template_folder="templates")
+class SumaModelo():
 
+    @classmethod
+    def get_sumaMov(self):
 
-@SumDepto.route("/home")
-@SumDepto.route("/")
-def home():
-    #return render_template("index.html")
-    return "Estamos en la pagina de Suma de movimiento por departamento"
+        try:
 
-#@tipoNomina.route('/listarTiposDeNominas', methods=['GET'])
-@SumDepto.route('/listarSumDepto', methods=['GET'])
-def listar_SumDepto():
+            connection = conexion()
+            datos=[]
 
-    con = ConexionSQL
-    conn = con.conexion()
-    cursor = conn.cursor()
-
-    try:
-
-        sql = '''
-
+            with connection.cursor() as cursor:
+                sql = '''
 select *  from (
    SELECT 
      D.CLAVE_DEPARTAMENTO,D.DESCRIPCION, M.[MOV_TIPO], COUNT(*) AS TOTAL
@@ -51,38 +41,17 @@ PIVOT (SUM(TOTAL) FOR MOV_TIPO in ([A],[R],[B])) AS pivotTable
 ORDER BY CLAVE_DEPARTAMENTO
 
 
-
-
-
 '''
 
-        cursor.execute(sql)
-        datos = cursor.fetchall()
-        #print(datos)
-        lista = []
+                cursor.execute(sql)
+                resulset = cursor.fetchall()
 
-        for fila in datos:
-            curso = {'DESCRIPCION':fila[1],'A': fila[2],'R': fila[3],'B': fila[4]}
-            lista.append(curso)
-        #return jsonify({'Tipos de nomina por mes':lista, 'mensaje':"Tipos de nominas"})
-        print(lista)
-        return jsonify(lista)
+                for row in resulset:
+                    sumas=Suma(row[0],row[1],row[2],row[3],row[4])
+                    datos.append(sumas.to_JSON())
 
+            connection.close()
+            return datos
         
-        
-    #except Exception as ex:
-    except pyodbc.Error as e:
-        print("Ocurrió un error de SQL Server:", e)
-        return jsonify({'mensaje': "Error"})
-
-
-
-def pagina_no_encontrada(error):
-    return '<h1>La pagina que intentas buscar no existe ...</h1>', 404
-
-
-
-
-
-
-
+        except Exception as ex:
+            raise Exception(ex)

@@ -5,11 +5,14 @@ from BDGTH.TipoDeNomina.src.rutas import tipoNomina
 from BDGTH.SumaMovDepto.src.rutas import SumDepto
 #from peliculas.peliculas import peliculas
 #from series_tv.series import series
+from BDGTH.caliz.src.routes import Suma
+from waitress import serve
 
 
 app = Flask(__name__)
 app.register_blueprint(tipoNomina, url_prefix="/tipoDeNomina")
 app.register_blueprint(SumDepto, url_prefix="/sumaMovDepto" )
+app.register_blueprint(Suma.sumaMov, url_prefix='/sumMovDepto2')
 SumDepto
 
 @app.route("/")
@@ -22,4 +25,5 @@ def pagina_no_encontrada(error):
 
 if __name__ == "__main__":
     app.register_error_handler(404, pagina_no_encontrada)
-    app.run(debug=True)
+    serve(app, host='0.0.0.0', port=5000)
+    #app.run(debug=True)
